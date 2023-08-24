@@ -8,6 +8,7 @@ from django.contrib.auth.models import (
     BaseUserManager,
     PermissionsMixin,
 )
+
 class UserManager(BaseUserManager):
     """Manager for users."""
 
@@ -33,9 +34,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     """User in the system."""
     username = models.CharField(max_length=21, unique=True)
     email = models.EmailField(max_length=255, unique=True)
+    follows = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='followers', blank=True, symmetrical=False)
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
-
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
@@ -53,6 +54,4 @@ class Tweet(models.Model):
 
     def __str__(self):
         return self.tweet_text
-
-
 

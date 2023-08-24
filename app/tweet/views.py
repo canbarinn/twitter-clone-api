@@ -7,7 +7,6 @@ from rest_framework.permissions import IsAuthenticated
 
 from core.models import Tweet
 from tweet import serializers
-from django.utils import timezone
 
 
 class TweetViewSet(viewsets.ModelViewSet):

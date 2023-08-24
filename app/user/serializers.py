@@ -7,14 +7,33 @@ from django.utils.translation import gettext as _
 
 from rest_framework import serializers
 
+
+
+class FollowSerializer(serializers.ModelSerializer):
+
+    id = serializers.IntegerField()
+
+    class Meta:
+        model = get_user_model()
+        fields = (
+            'id',
+            'username',
+            'email',
+        )
+        read_only_fields = ['email', 'username']
+
+
 class UserSerializer(serializers.ModelSerializer):
     """Serializer for the user object."""
+
+    followers = FollowSerializer(many=True)
+    follows = FollowSerializer(many=True)
 
     class Meta:
         model = get_user_model()
 # REMINDER: We are not including is_staff or is_active because
 # we do not want user to set those themselves. This should done by admins.
-        fields = ['email', 'password', 'username']
+        fields = ['id', 'email', 'password', 'username', 'follows', 'followers']
         extra_kwargs = {'password': {'write_only': True, 'min_length': 5}}
 
     def create(self, validated_data):
@@ -56,3 +75,4 @@ class AuthTokenSerializer(serializers.Serializer):
 
         attrs['user'] = user
         return attrs
+

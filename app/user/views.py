@@ -9,10 +9,15 @@
 Views for the user API.
 """
 
-from rest_framework import generics, authentication, permissions
+from rest_framework import generics, authentication, permissions, viewsets, status
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.settings import api_settings
-from user.serializers import UserSerializer, AuthTokenSerializer
+from user.serializers import UserSerializer, AuthTokenSerializer, FollowSerializer
+from django.contrib.auth import get_user_model
+from rest_framework.response import Response
+
+from drf_yasg.utils import swagger_auto_schema
+
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -32,8 +37,29 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
+
     def get_object(self):
         """Retrieve and return the authenticated user."""
         return self.request.user
 
-    
+class FollowViewSet(viewsets.ModelViewSet):
+    """Manage following users."""
+    serializer_class = FollowSerializer
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def list(self, request):
+        follows = request.user.follows.all().order_by('-id')
+        serializer = FollowSerializer(follows, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
+        request_body=FollowSerializer
+    )
+    def follow(self, request):
+        follow_id = request.data.get('id')
+        user_to_be_followed = get_user_model().objects.get(id=follow_id)
+        request.user.follows.add(user_to_be_followed)
+        return Response({"message": "Followed."}, status=status.HTTP_200_OK)
+
+
