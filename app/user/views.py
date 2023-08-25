@@ -37,10 +37,16 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
-
     def get_object(self):
         """Retrieve and return the authenticated user."""
         return self.request.user
+
+    def patch(self, request, pk=None):
+        serializer = UserSerializer(self.request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Updated."}, status=status.HTTP_200_OK)
+        return Response({"message": "You cannot update."}, status=status.HTTP_400_BAD_REQUEST)
 
 class FollowViewSet(viewsets.ModelViewSet):
     """Manage following users."""
@@ -53,13 +59,15 @@ class FollowViewSet(viewsets.ModelViewSet):
         serializer = FollowSerializer(follows, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @swagger_auto_schema(
-        request_body=FollowSerializer
-    )
     def follow(self, request):
         follow_id = request.data.get('id')
         user_to_be_followed = get_user_model().objects.get(id=follow_id)
         request.user.follows.add(user_to_be_followed)
         return Response({"message": "Followed."}, status=status.HTTP_200_OK)
 
+    def unfollow(self, request):
+        unfollow_id = request.data.get('id')
+        user_to_be_unfollowed = get_user_model().objects.get(id=unfollow_id)
+        request.user.follows.remove(user_to_be_unfollowed)
+        return Response({"message": "Unfollowed."},status=status.HTTP_200_OK)
 

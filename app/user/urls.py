@@ -15,5 +15,6 @@ urlpatterns = [
     path('me/', views.ManageUserView.as_view(), name='me'),
     path('followings/', views.FollowViewSet.as_view({'get':'list'}), name='followings'),
     path('follow/', views.FollowViewSet.as_view({'post':'follow'}), name='follow'),
+    path('unfollow/', views.FollowViewSet.as_view({'post':'unfollow'}), name='unfollow'),
 
 ]

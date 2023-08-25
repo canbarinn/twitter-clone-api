@@ -23,7 +23,7 @@ class FollowSerializer(serializers.ModelSerializer):
         read_only_fields = ['email', 'username']
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializer( serializers.ModelSerializer):
     """Serializer for the user object."""
 
     followers = FollowSerializer(many=True)
@@ -36,20 +36,38 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'email', 'password', 'username', 'follows', 'followers']
         extra_kwargs = {'password': {'write_only': True, 'min_length': 5}}
 
+    # def create(self, validated_data):
+    #     """Create and return a user with encrypted password."""
+    #     return get_user_model().objects.create_user(**validated_data)
+
     def create(self, validated_data):
-        """Create and return a user with encrypted password."""
-        return get_user_model().objects.create_user(**validated_data)
+        user_follows = validated_data.pop('follows', [])
+        user_followers = validated_data.pop('followers', [])
+        user = get_user_model().objects.create(**validated_data)
+
+        if user_follows is not None:
+            for follow in user_follows:
+                setattr(user.follows, 'id', follow)
+
+        if user_followers is not None:
+            for follower in user_followers:
+                setattr(user.followers, 'id', follower)
+        return user
 
     def update(self, instance, validated_data):
-        """Update and return user."""
-        password = validated_data.pop('password', None)
-        user = super().update(instance, validated_data)
+        user_follows = validated_data.pop('follows', [])
+        user_followers = validated_data.pop('followers', [])
+        if user_follows is not None:
+            for follow in user_follows:
+                setattr(instance.follows, 'id', follow)
 
-        if password:
-            user.set_password(password)
-            user.save()
-
-        return user
+        if user_followers is not None:
+            for follower in user_followers:
+                setattr(instance.followers, 'id', follower)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
 
 
 class AuthTokenSerializer(serializers.Serializer):

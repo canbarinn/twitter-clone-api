@@ -49,9 +49,13 @@ class Tweet(models.Model):
         on_delete=models.CASCADE,
     )
     tweet_text = models.TextField(blank=False)
+    liked_by = models.ManyToManyField(settings.AUTH_USER_MODEL, through='Likes')
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.tweet_text
 
+class Likes(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    tweet = models.ForeignKey(Tweet, on_delete=models.CASCADE)
