@@ -12,18 +12,18 @@ from django.contrib.auth.models import (
 class UserManager(BaseUserManager):
     """Manager for users."""
 
-    def create_user(self, username, email, password=None, **extra_fields):
+    def create_user(self, email, password=None, **extra_fields):
         """Create, save and return a new user."""
         if not email:
             raise ValueError("User must have an email address.")
-        user = self.model(username=username, email=self.normalize_email(email), **extra_fields)
+        user = self.model(email=self.normalize_email(email), **extra_fields)
         user.set_password(password)
         user.save(using=self.db)
 
         return user
 
-    def create_superuser(self, username, email, password):
-        user = self.create_user(username, email, password)
+    def create_superuser(self, email, password):
+        user = self.create_user(email, password)
         user.is_staff = True
         user.is_superuser = True
         user.save(using=self._db)
@@ -49,13 +49,9 @@ class Tweet(models.Model):
         on_delete=models.CASCADE,
     )
     tweet_text = models.TextField(blank=False)
-    liked_by = models.ManyToManyField(settings.AUTH_USER_MODEL, through='Likes')
+    likes = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name='likes')
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.tweet_text
-
-class Likes(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    tweet = models.ForeignKey(Tweet, on_delete=models.CASCADE)

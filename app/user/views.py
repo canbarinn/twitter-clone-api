@@ -16,8 +16,6 @@ from user.serializers import UserSerializer, AuthTokenSerializer, FollowSerializ
 from django.contrib.auth import get_user_model
 from rest_framework.response import Response
 
-from drf_yasg.utils import swagger_auto_schema
-
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -41,12 +39,6 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
         """Retrieve and return the authenticated user."""
         return self.request.user
 
-    def patch(self, request, pk=None):
-        serializer = UserSerializer(self.request.user, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({"message": "Updated."}, status=status.HTTP_200_OK)
-        return Response({"message": "You cannot update."}, status=status.HTTP_400_BAD_REQUEST)
 
 class FollowViewSet(viewsets.ModelViewSet):
     """Manage following users."""

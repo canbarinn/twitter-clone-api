@@ -1,9 +1,11 @@
 """
 Views for the tweet APIs.
 """
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from core.models import Tweet
 from tweet import serializers
@@ -30,3 +32,14 @@ class TweetViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         """Create a new tweet."""
         serializer.save(user=self.request.user)
+
+class LikeView(APIView):
+    serializer_class = serializers.TweetSerializer
+    queryset = Tweet.objects.all()
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, tweet_id):
+        tweet = Tweet.objects.get(id=tweet_id)
+        tweet.likes.add(request.user)
+        return Response({'message':'Tweet liked.'}, status=status.HTTP_200_OK)
