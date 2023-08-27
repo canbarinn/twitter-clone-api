@@ -10,12 +10,13 @@ Views for the user API.
 """
 
 from rest_framework import generics, authentication, permissions, viewsets, status
-from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.settings import api_settings
-from user.serializers import UserSerializer, AuthTokenSerializer, FollowSerializer
+from user.serializers import UserSerializer, AuthTokenSerializer, FollowSerializer, UserImageSerializer
 from django.contrib.auth import get_user_model
 from rest_framework.response import Response
-
+from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.decorators import action
+from rest_framework.views import APIView
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -34,6 +35,7 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
+    queryset = get_user_model().objects.all()
 
     def get_object(self):
         """Retrieve and return the authenticated user."""
@@ -63,3 +65,30 @@ class FollowViewSet(viewsets.ModelViewSet):
         request.user.follows.remove(user_to_be_unfollowed)
         return Response({"message": "Unfollowed."},status=status.HTTP_200_OK)
 
+
+class UploadProfilePictureView(APIView):
+    serializer_class = UserImageSerializer
+    queryset = get_user_model().objects.all()
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk=None):
+        """Upload a profile image"""
+        user = self.request.user
+        serializer = UserImageSerializer(user, data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk=None):
+        user = self.request.user
+        serializer = UserImageSerializer(user, data=request.data)
+
+        if serializer.is_valid():
+            user.image.delete(save=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

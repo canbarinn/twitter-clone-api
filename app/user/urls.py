@@ -16,5 +16,6 @@ urlpatterns = [
     path('followings/', views.FollowViewSet.as_view({'get':'list'}), name='followings'),
     path('follow/', views.FollowViewSet.as_view({'post':'follow'}), name='follow'),
     path('unfollow/', views.FollowViewSet.as_view({'post':'unfollow'}), name='unfollow'),
+    path('upload_image/', views.UploadProfilePictureView.as_view(), name='upload_image'),
 
 ]

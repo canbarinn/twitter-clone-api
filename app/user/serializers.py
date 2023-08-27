@@ -4,7 +4,7 @@ Serializers for the user API View.
 
 from django.contrib.auth import get_user_model, authenticate
 from django.utils.translation import gettext as _
-from core.models import Tweet
+from core.models import Tweet, User
 
 from rest_framework import serializers
 
@@ -23,6 +23,16 @@ class FollowSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ['username', 'email']
 
+
+class UserImageSerializer(serializers.ModelSerializer):
+    """Serializer for uploading profile pictures."""
+
+    class Meta:
+        model = User
+        fields = ['id', 'image']
+        read_only_fields = ['id']
+        extra_kwargs = {'image': {'required': 'True'}}
+
 class LikedTweetSerializer(serializers.ModelSerializer):
 
     id = serializers.IntegerField()
@@ -39,15 +49,16 @@ class LikedTweetSerializer(serializers.ModelSerializer):
 class UserSerializer( serializers.ModelSerializer):
     """Serializer for the user object."""
 
-    followers = FollowSerializer(many=True)
-    follows = FollowSerializer(many=True)
-    likes = LikedTweetSerializer(many=True)
+    followers = FollowSerializer(many=True, required=False)
+    follows = FollowSerializer(many=True, required=False)
+    likes = LikedTweetSerializer(many=True, required=False)
+
 
     class Meta:
         model = get_user_model()
     # REMINDER: We are not including is_staff or is_active because
     # we do not want user to set those themselves. This should done by admins.
-        fields = ['id', 'email', 'password', 'username', 'follows', 'followers', 'likes']
+        fields = ['id', 'email', 'password', 'username', 'follows', 'followers', 'likes', 'image']
         extra_kwargs = {'password': {'write_only': True, 'min_length': 5}}
 
 
@@ -55,6 +66,7 @@ class UserSerializer( serializers.ModelSerializer):
         user_follows = validated_data.pop('follows', [])
         user_followers = validated_data.pop('followers', [])
         likes = validated_data.pop('likes', [])
+        image = validated_data.pop('image', [])
         user = get_user_model().objects.create(**validated_data)
 
         if user_follows is not None:
@@ -72,12 +84,17 @@ class UserSerializer( serializers.ModelSerializer):
                 for attr, value in like:
                     setattr(user.likes, attr, value)
 
+        for img in image:
+            for attr, value in img:
+                setattr(user.image, attr, value)
+
         return user
 
     def update(self, instance, validated_data):
         user_follows = validated_data.pop('follows', [])
         user_followers = validated_data.pop('followers', [])
         likes = validated_data.pop('likes', [])
+        image = validated_data.pop('image', [])
 
         if user_follows is not None:
             for follow in user_follows:
@@ -93,6 +110,10 @@ class UserSerializer( serializers.ModelSerializer):
             for user_liked in likes:
                 for attr, value in user_liked:
                     setattr(instance.likes, attr, value)
+
+        for img in image:
+            for attr, value in img:
+                setattr(instance.image, attr, value)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -115,7 +136,7 @@ class AuthTokenSerializer(serializers.Serializer):
         password = attrs.get('password')
         user = authenticate(
             request=self.context.get('request'),
-            name=email,
+            username=email,
             password=password,
         )
         if not user:
@@ -124,5 +145,3 @@ class AuthTokenSerializer(serializers.Serializer):
 
         attrs['user'] = user
         return attrs
-
-

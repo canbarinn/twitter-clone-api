@@ -43,3 +43,8 @@ class LikeView(APIView):
         tweet = Tweet.objects.get(id=tweet_id)
         tweet.likes.add(request.user)
         return Response({'message':'Tweet liked.'}, status=status.HTTP_200_OK)
+
+    def delete(self, request, tweet_id):
+        tweet = Tweet.objects.get(id=tweet_id)
+        tweet.likes.remove(request.user)
+        return Response({'message':'Like is removed.'}, status=status.HTTP_200_OK)

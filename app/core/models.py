@@ -1,6 +1,9 @@
 """
 Database models.
 """
+import uuid
+import os
+
 from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import (
@@ -8,6 +11,14 @@ from django.contrib.auth.models import (
     BaseUserManager,
     PermissionsMixin,
 )
+
+
+def user_image_file_path(instance, filename):
+    ext = os.path.splitext(filename)[1]
+    filename = f'{uuid.uuid4()}{ext}'
+
+    return os.path.join('uploads', 'user', filename)
+
 
 class UserManager(BaseUserManager):
     """Manager for users."""
@@ -35,6 +46,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=21, unique=True)
     email = models.EmailField(max_length=255, unique=True)
     follows = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='followers', blank=True, symmetrical=False)
+    image = models.ImageField(null=True, upload_to=user_image_file_path)
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     objects = UserManager()
