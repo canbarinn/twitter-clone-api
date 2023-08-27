@@ -7,22 +7,21 @@ from django.contrib.auth import get_user_model
 
 
 class LikedUserSerializer(serializers.ModelSerializer):
+    """Serializer for likes."""
 
     class Meta:
-        model = User
+        model = get_user_model()
         fields = (
             'id',
-            'username',
+            'name',
             'email',
         )
-        read_only_fields = ['username', 'email']
-
+        read_only_fields = ['name', 'email']
 
 
 class TweetSerializer(serializers.ModelSerializer):
     """Serializer for tweets."""
-
-    likes = LikedUserSerializer(many=True)
+    likes = LikedUserSerializer(many=True, required=False)
 
     class Meta:
         model = Tweet
@@ -30,29 +29,16 @@ class TweetSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
     def create(self, validated_data):
-        likes = validated_data.pop('likes', [])
+        """Create tweet."""
         tweet = Tweet.objects.create(**validated_data)
-
-        if likes is not None:
-            for like in likes:
-                for attr, value in like:
-                    setattr(tweet.likes, attr, value)
-
         return tweet
 
     def update(self, instance, validated_data):
-        likes = validated_data.pop('likes', [])
-
-        if likes is not None:
-            for tweet_liked in likes:
-                for attr,value in tweet_liked:
-                    setattr(instance,attr,value)
-
+        """Update tweet."""
         for attr,value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
         return instance
-
 
 
 class TweetDetailSerializer(TweetSerializer):
@@ -62,4 +48,10 @@ class TweetDetailSerializer(TweetSerializer):
         fields = TweetSerializer.Meta.fields
 
 
+class LikeSerializer(serializers.ModelSerializer):
+    """Serializer for like tweet view."""
+    id = serializers.IntegerField()
 
+    class Meta():
+        model = Tweet
+        fields = ['id']

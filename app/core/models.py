@@ -14,6 +14,7 @@ from django.contrib.auth.models import (
 
 
 def user_image_file_path(instance, filename):
+    """Generate file path for new recipe image."""
     ext = os.path.splitext(filename)[1]
     filename = f'{uuid.uuid4()}{ext}'
 
@@ -34,6 +35,7 @@ class UserManager(BaseUserManager):
         return user
 
     def create_superuser(self, email, password):
+        """Create, save and return a new superuser."""
         user = self.create_user(email, password)
         user.is_staff = True
         user.is_superuser = True
@@ -43,7 +45,7 @@ class UserManager(BaseUserManager):
 
 class User(AbstractBaseUser, PermissionsMixin):
     """User in the system."""
-    username = models.CharField(max_length=21, unique=True)
+    name = models.CharField(max_length=255)
     email = models.EmailField(max_length=255, unique=True)
     follows = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='followers', blank=True, symmetrical=False)
     image = models.ImageField(null=True, upload_to=user_image_file_path)

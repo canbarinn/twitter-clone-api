@@ -135,8 +135,6 @@ class PrivateTweetApiTests(TestCase):
         self.assertEqual(tweet.user, self.user)
 
     def test_update_user_returns_error(self):
-        #REMINDER: Foreignkey field builds relationship with tweets and
-        #users so django's default behavior prevents user of the tweet get changed.
         """Test changing the user of the tweet results in an error."""
         new_user = create_user(
             username = 'othername123',

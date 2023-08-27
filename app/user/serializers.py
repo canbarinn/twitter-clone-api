@@ -2,30 +2,29 @@
 Serializers for the user API View.
 """
 
-from django.contrib.auth import get_user_model, authenticate
+from django.contrib.auth import get_user_model
 from django.utils.translation import gettext as _
 from core.models import Tweet, User
 
 from rest_framework import serializers
 
 
-
 class FollowSerializer(serializers.ModelSerializer):
-
+    """Serializer for follows list."""
     id = serializers.IntegerField()
 
     class Meta:
         model = get_user_model()
         fields = (
             'id',
-            'username',
+            'name',
             'email',
         )
-        read_only_fields = ['username', 'email']
+        read_only_fields = ['name', 'email']
 
 
 class UserImageSerializer(serializers.ModelSerializer):
-    """Serializer for uploading profile pictures."""
+    """Serializer for profile pictures."""
 
     class Meta:
         model = User
@@ -33,8 +32,9 @@ class UserImageSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
         extra_kwargs = {'image': {'required': 'True'}}
 
-class LikedTweetSerializer(serializers.ModelSerializer):
 
+class LikedTweetSerializer(serializers.ModelSerializer):
+    """Serializer for likes."""
     id = serializers.IntegerField()
 
     class Meta:
@@ -48,72 +48,55 @@ class LikedTweetSerializer(serializers.ModelSerializer):
 
 class UserSerializer( serializers.ModelSerializer):
     """Serializer for the user object."""
-
     followers = FollowSerializer(many=True, required=False)
     follows = FollowSerializer(many=True, required=False)
     likes = LikedTweetSerializer(many=True, required=False)
 
-
     class Meta:
         model = get_user_model()
-    # REMINDER: We are not including is_staff or is_active because
-    # we do not want user to set those themselves. This should done by admins.
-        fields = ['id', 'email', 'password', 'username', 'follows', 'followers', 'likes', 'image']
+        fields = ['id', 'email', 'password', 'name', 'follows', 'followers', 'likes', 'image']
         extra_kwargs = {'password': {'write_only': True, 'min_length': 5}}
 
-
     def create(self, validated_data):
+        """Create an user."""
         user_follows = validated_data.pop('follows', [])
         user_followers = validated_data.pop('followers', [])
         likes = validated_data.pop('likes', [])
         image = validated_data.pop('image', [])
         user = get_user_model().objects.create(**validated_data)
 
-        if user_follows is not None:
-            for follow in user_follows:
-                for attr, value in follow:
-                    setattr(user.follows, attr, value)
-
-        if user_followers is not None:
-            for follower in user_followers:
-                for attr, value in follower:
-                    setattr(user.followers, attr, value)
-
-        if likes is not None:
-            for like in likes:
-                for attr, value in like:
-                    setattr(user.likes, attr, value)
-
-        for img in image:
-            for attr, value in img:
-                setattr(user.image, attr, value)
+        for list, list_field in [
+            (user_follows, user.follows),
+            (user_followers, user.followers),
+            (likes, user.likes),
+            (image, user.image)
+            ]:
+            if list is not None:
+                for item in list:
+                    for attr, value in item:
+                        setattr(list_field, attr, value)
 
         return user
 
+
     def update(self, instance, validated_data):
+        """Update an user."""
         user_follows = validated_data.pop('follows', [])
         user_followers = validated_data.pop('followers', [])
         likes = validated_data.pop('likes', [])
         image = validated_data.pop('image', [])
 
-        if user_follows is not None:
-            for follow in user_follows:
-                for attr,value in follow:
-                    setattr(instance.follows, attr, value)
+        for list, list_field in [
+            (user_follows, instance.follows),
+            (user_followers, instance.followers),
+            (likes, instance.likes),
+            (image, instance.image)
+            ]:
 
-        if user_followers is not None:
-            for follower in user_followers:
-                for attr,value in follower:
-                    setattr(instance.followers, attr, value)
-
-        if likes is not None:
-            for user_liked in likes:
-                for attr, value in user_liked:
-                    setattr(instance.likes, attr, value)
-
-        for img in image:
-            for attr, value in img:
-                setattr(instance.image, attr, value)
+            if list is not None:
+                for item in list:
+                    for attr, value in item:
+                        setattr(list_field, attr, value)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -121,27 +104,3 @@ class UserSerializer( serializers.ModelSerializer):
         instance.save()
         return instance
 
-
-class AuthTokenSerializer(serializers.Serializer):
-    """Serializer for the user auth token."""
-    email = serializers.EmailField()
-    password = serializers.CharField(
-        style={'input_type': 'password'},
-        trim_whitespace=False,
-    )
-
-    def validate(self, attrs):
-        """Validate and authenticate the user."""
-        email = attrs.get('email')
-        password = attrs.get('password')
-        user = authenticate(
-            request=self.context.get('request'),
-            username=email,
-            password=password,
-        )
-        if not user:
-            msg = _('Unable to authenticate with ')
-            raise serializers.ValidationError(msg, code='authorization')
-
-        attrs['user'] = user
-        return attrs

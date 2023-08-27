@@ -33,18 +33,22 @@ class TweetViewSet(viewsets.ModelViewSet):
         """Create a new tweet."""
         serializer.save(user=self.request.user)
 
+
 class LikeView(APIView):
-    serializer_class = serializers.TweetSerializer
+    """View for manage likes."""
+    serializer_class = serializers.LikeSerializer
     queryset = Tweet.objects.all()
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request, tweet_id):
+        """Like tweet."""
         tweet = Tweet.objects.get(id=tweet_id)
         tweet.likes.add(request.user)
         return Response({'message':'Tweet liked.'}, status=status.HTTP_200_OK)
 
     def delete(self, request, tweet_id):
+        """Remove like from previously liked tweet."""
         tweet = Tweet.objects.get(id=tweet_id)
         tweet.likes.remove(request.user)
         return Response({'message':'Like is removed.'}, status=status.HTTP_200_OK)
