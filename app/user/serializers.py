@@ -59,22 +59,12 @@ class UserSerializer( serializers.ModelSerializer):
 
     def create(self, validated_data):
         """Create an user."""
-        user_follows = validated_data.pop('follows', [])
-        user_followers = validated_data.pop('followers', [])
-        likes = validated_data.pop('likes', [])
-        image = validated_data.pop('image', [])
-        user = get_user_model().objects.create(**validated_data)
-
-        for list, list_field in [
-            (user_follows, user.follows),
-            (user_followers, user.followers),
-            (likes, user.likes),
-            (image, user.image)
-            ]:
-            if list is not None:
-                for item in list:
-                    for attr, value in item:
-                        setattr(list_field, attr, value)
+        validated_data.pop('follows', [])
+        validated_data.pop('followers', [])
+        validated_data.pop('likes', [])
+        validated_data.pop('image', [])
+        password = validated_data.pop('password')
+        user = get_user_model().objects.create_user(password=password, **validated_data)
 
         return user
 
