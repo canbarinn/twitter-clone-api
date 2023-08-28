@@ -15,9 +15,9 @@ from rest_framework.authtoken.models import Token
 class CreateUserView(generics.CreateAPIView):
     """Create a new user in the system."""
     serializer_class = UserSerializer
-    
 
-class AuthToken(ObtainAuthToken):
+
+class AuthTokenView(ObtainAuthToken):
     """Create a new auth token for user."""
 
     def post(self, request, *args, **kwargs):
